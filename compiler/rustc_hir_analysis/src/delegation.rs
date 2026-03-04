@@ -610,13 +610,19 @@ fn get_delegation_user_specified_args<'tcx>(
             }
         };
 
+        let self_ty = if tcx.generics_of(def_id).has_self {
+            get_delegation_self_ty(tcx, delegation_id)
+        } else {
+            None
+        };
+
         let args = lowerer
             .lower_generic_args_of_path(
                 segment.ident.span,
                 def_id,
                 parent_args,
                 segment,
-                None,
+                self_ty,
                 GenericArgPosition::Value,
             )
             .0;
