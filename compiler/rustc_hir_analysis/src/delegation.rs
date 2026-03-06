@@ -596,7 +596,11 @@ fn get_delegation_user_specified_args<'tcx>(
             .as_slice()
     });
 
-    let child_args = info.child_args_segment_id.and_then(get_segment).map(|(segment, def_id)| {
+    let child_args = info.child_args_segment_id.map(get_segment).map(|(segment, def_id)| {
+        if !matches!(tcx.def_kind(def_id), DefKind::Fn | DefKind::AssocFn) {
+            return &[][..];
+        }
+
         let parent_args = if let Some(parent_args) = parent_args {
             parent_args
         } else {
@@ -608,25 +612,13 @@ fn get_delegation_user_specified_args<'tcx>(
             }
         };
 
-        // Provide `self_ty` only when the child segment resolves to a non-function
-        // item with Self (e.g. a Trait during error recovery). For trait methods
-        // (AssocFn), `has_self` is true (inherited from parent trait) but Self
-        // comes from `parent_args`, not `self_ty`.
-        let self_ty = if !matches!(tcx.def_kind(def_id), DefKind::Fn | DefKind::AssocFn)
-            && tcx.generics_of(def_id).has_self
-        {
-            get_delegation_self_ty(tcx, delegation_id)
-        } else {
-            None
-        };
-
         let args = lowerer
             .lower_generic_args_of_path(
                 segment.ident.span,
                 def_id,
                 parent_args,
                 segment,
-                self_ty,
+                None,
                 GenericArgPosition::Value,
             )
             .0;
