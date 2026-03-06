@@ -596,7 +596,7 @@ fn get_delegation_user_specified_args<'tcx>(
             .as_slice()
     });
 
-    let child_args = info.child_args_segment_id.map(get_segment).map(|(segment, def_id)| {
+    let child_args = info.child_args_segment_id.and_then(get_segment).map(|(segment, def_id)| {
         if !matches!(tcx.def_kind(def_id), DefKind::Fn | DefKind::AssocFn) {
             return &[][..];
         }
